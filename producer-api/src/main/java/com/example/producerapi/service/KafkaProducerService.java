@@ -1,6 +1,6 @@
-package com.example.producer_api.service;
+package com.example.producerapi.service;
 
-import com.example.producer_api.dto.UserLogRequest;
+import com.example.producerapi.dto.UserLogRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;

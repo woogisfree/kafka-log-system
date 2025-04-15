@@ -1,4 +1,4 @@
-package com.example.producer_api.dto;
+package com.example.producerapi.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

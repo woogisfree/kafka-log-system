@@ -1,4 +1,4 @@
-package com.example.producer_api;
+package com.example.producerapi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

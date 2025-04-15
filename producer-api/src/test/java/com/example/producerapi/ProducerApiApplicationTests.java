@@ -1,4 +1,4 @@
-package com.example.producer_api;
+package com.example.producerapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

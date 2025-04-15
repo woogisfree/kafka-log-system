@@ -1,7 +1,7 @@
-package com.example.producer_api.controller;
+package com.example.producerapi.controller;
 
-import com.example.producer_api.dto.UserLogRequest;
-import com.example.producer_api.service.KafkaProducerService;
+import com.example.producerapi.dto.UserLogRequest;
+import com.example.producerapi.service.KafkaProducerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
