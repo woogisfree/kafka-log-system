@@ -8,8 +8,8 @@ spring:
     bootstrap-servers: kafka:9092
     consumer:
       group-id: log-consumer-group
-      key-deserializer: org.apache.kafka.common.serialization.StringSerializer
-      value-deserializer: org.apache.kafka.common.serialization.StringSerializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
 
   jpa:
