@@ -7,3 +7,10 @@
 /dataSources/
 /dataSources.local.xml
 /vcs.xml
+/compiler.xml
+/dataSources.xml
+/modules/consumer-worker.main.iml
+/gradle.xml
+/kafka-log-system.iml
+/misc.xml
+/modules.xml
