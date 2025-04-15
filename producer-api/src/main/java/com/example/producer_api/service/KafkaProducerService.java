@@ -13,7 +13,7 @@ public class KafkaProducerService {
 
     public void sendLog(UserLogRequest logRequest) {
         String message = String.format(
-                "{\"userID\":\"%s\", \"action\":\"%s\", \"timestamp\":\"%s\"}",
+                "{\"userId\":\"%s\", \"action\":\"%s\", \"timestamp\":\"%s\"}",
                 logRequest.getUserId(), logRequest.getAction(), logRequest.getTimestamp());
 
         kafkaTemplate.send("user-activity-log", message);
