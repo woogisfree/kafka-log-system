@@ -2,6 +2,7 @@ package com.example.producerapi.controller;
 
 import com.example.producerapi.dto.UserLogRequest;
 import com.example.producerapi.service.KafkaProducerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +18,7 @@ public class LogController {
     private final KafkaProducerService kafkaProducerService;
 
     @PostMapping
-    public ResponseEntity<Void> sendLog(@RequestBody UserLogRequest request) {
+    public ResponseEntity<Void> sendLog(@Valid @RequestBody UserLogRequest request) {
         kafkaProducerService.sendLog(request);
         return ResponseEntity.ok().build();
     }
