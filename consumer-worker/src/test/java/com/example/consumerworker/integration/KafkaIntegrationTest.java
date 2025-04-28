@@ -50,7 +50,7 @@ class KafkaIntegrationTest {
         userLogRepository.deleteAll();
     }
 
-    @DisplayName("Kafka를 통해 전송된 로그 메시지가 DB에 저장된다.")
+    @DisplayName("Kafka를 통해 전송된 로그 메시지가 DB에 저장되는지 검증한다.")
     @Test
     void givenUserLogMessage_whenProduced_thenConsumedAndSaved() throws Exception {
         //given
@@ -68,7 +68,7 @@ class KafkaIntegrationTest {
                 .containsExactly(tuple("jin", "click"));
     }
 
-    @DisplayName("Kafka 소비 실패 시 DLQ로 전송되고 DB에 저장되는지 통합 테스트한다")
+    @DisplayName("Kafka 소비 실패 시 DLQ로 전송되고 DB에 저장되는지 검증한다")
     @Test
     void givenInvalidUserLogMessage_whenProduced_thenSavedToDlqTable() throws Exception {
         // given
@@ -93,6 +93,56 @@ class KafkaIntegrationTest {
                     assertThat(dlqMessage.getErrorMessage())
                             .contains("Listener method")
                             .contains("consume");
+                });
+    }
+
+    @DisplayName("Kafka로 3개의 메시지를 전송했을 때 모두 DB에 저장되는지 검증한다")
+    @Test
+    void givenMultipleUserLogMessages_whenProduced_thenAllConsumedAndSaved() throws Exception {
+        // given
+        List<UserLogMessage> messages = List.of(
+                new UserLogMessage("user1", "click", LocalDateTime.now()),
+                new UserLogMessage("user2", "view", LocalDateTime.now()),
+                new UserLogMessage("user3", "purchase", LocalDateTime.now())
+        );
+
+        for (UserLogMessage msg : messages) {
+            kafkaTemplate.send("user-activity-log", objectMapper.writeValueAsString(msg));
+        }
+
+        // when & then
+        await()
+                .atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> {
+                    List<UserLog> userLogs = userLogRepository.findAll();
+                    assertThat(userLogs).hasSize(messages.size());
+
+                    assertThat(userLogs)
+                            .extracting(UserLog::getUserId, UserLog::getAction)
+                            .containsExactlyInAnyOrder(
+                                    tuple("user1", "click"),
+                                    tuple("user2", "view"),
+                                    tuple("user3", "purchase")
+                            );
+                });
+    }
+
+    @DisplayName("Kafka로 100개의 메시지를 전송했을 때 모두 DB에 저장되는지 검증한다")
+    @Test
+    void givenManyUserLogMessages_whenProduced_thenAllConsumedAndSaved() throws Exception {
+        // given
+        int messageCount = 100;
+        for (int i = 0; i < messageCount; i++) {
+            UserLogMessage msg = new UserLogMessage("user" + i, "click", LocalDateTime.now());
+            kafkaTemplate.send("user-activity-log", objectMapper.writeValueAsString(msg)).get(); // 동기
+        }
+
+        // when & then
+        await()
+                .atMost(Duration.ofSeconds(15))
+                .untilAsserted(() -> {
+                    List<UserLog> userLogs = userLogRepository.findAll();
+                    assertThat(userLogs).hasSize(messageCount);
                 });
     }
 }
