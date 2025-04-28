@@ -1,0 +1,98 @@
+package com.example.consumerworker.integration;
+
+import com.example.consumerworker.domain.DlqMessage;
+import com.example.consumerworker.domain.UserLog;
+import com.example.consumerworker.dto.UserLogMessage;
+import com.example.consumerworker.repository.DlqMessageRepository;
+import com.example.consumerworker.repository.UserLogRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.awaitility.Awaitility.await;
+
+@EnableKafka
+@EmbeddedKafka(partitions = 1, topics = "user-activity-log")
+@SpringBootTest
+@ExtendWith(SpringExtension.class)
+@ActiveProfiles("test")
+class KafkaIntegrationTest {
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Autowired
+    private UserLogRepository userLogRepository;
+
+    @Autowired
+    private DlqMessageRepository dlqMessageRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @AfterEach
+    void tearDown() {
+        userLogRepository.deleteAll();
+    }
+
+    @DisplayName("Kafka를 통해 전송된 로그 메시지가 DB에 저장된다.")
+    @Test
+    void givenUserLogMessage_whenProduced_thenConsumedAndSaved() throws Exception {
+        //given
+        UserLogMessage request = new UserLogMessage("jin", "click", LocalDateTime.now());
+        String message = objectMapper.writeValueAsString(request);
+
+        //when
+        kafkaTemplate.send("user-activity-log", message);
+
+        //then
+        Thread.sleep(2000); // Consumer가 저장할 시간 살짝 대기
+
+        assertThat(userLogRepository.findAll())
+                .extracting(UserLog::getUserId, UserLog::getAction)
+                .containsExactly(tuple("jin", "click"));
+    }
+
+    @DisplayName("Kafka 소비 실패 시 DLQ로 전송되고 DB에 저장되는지 통합 테스트한다")
+    @Test
+    void givenInvalidUserLogMessage_whenProduced_thenSavedToDlqTable() throws Exception {
+        // given
+        String invalidJson = "{\"userId\":\"jin\"}"; // 'action', 'timestamp' 누락
+
+        // when
+        kafkaTemplate.send("user-activity-log", invalidJson);
+
+        // then
+        await()
+                .atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> {
+                    List<DlqMessage> dlqMessages = dlqMessageRepository.findAll();
+                    assertThat(dlqMessages).hasSize(1);
+
+                    DlqMessage dlqMessage = dlqMessages.get(0);
+
+                    // rawMessage에 원래 보낸 invalidJson 포함
+                    assertThat(dlqMessage.getRawMessage()).contains("jin");
+
+                    // errorMessage에 Validation 실패 관련 메시지 포함
+                    assertThat(dlqMessage.getErrorMessage())
+                            .contains("Listener method")
+                            .contains("consume");
+                });
+    }
+}
