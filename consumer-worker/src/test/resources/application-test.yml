@@ -16,6 +16,8 @@ spring:
 
   kafka:
     bootstrap-servers: ${spring.embedded.kafka.brokers}
+    listener:
+      auto-startup: true
 
 logging:
   level:
