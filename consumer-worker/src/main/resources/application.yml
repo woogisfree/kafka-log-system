@@ -5,7 +5,6 @@ spring:
     url: jdbc:postgresql://postgres:5432/logs
     username: postgres
     password: postgres
-
   kafka:
     bootstrap-servers: kafka:9092
     consumer:
@@ -13,7 +12,6 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -21,3 +19,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  metrics:
+    tags:
+      application: consumer-worker
